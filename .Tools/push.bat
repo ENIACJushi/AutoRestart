@@ -5,5 +5,5 @@ git add .
 :: Commit files
 git commit -m "%commit_msg%"
 :: push master
-git push origin master
+git push origin main
 pause
