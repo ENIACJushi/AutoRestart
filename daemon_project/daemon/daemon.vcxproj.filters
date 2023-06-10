@@ -26,9 +26,6 @@
     <ClInclude Include="Logger.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="daemon.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Tools.h">
       <Filter>头文件</Filter>
     </ClInclude>

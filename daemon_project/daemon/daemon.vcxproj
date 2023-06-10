@@ -147,7 +147,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h" />
-    <ClInclude Include="daemon.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Tools.h" />
   </ItemGroup>

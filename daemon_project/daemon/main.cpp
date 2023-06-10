@@ -3,20 +3,10 @@
 #include <thread>
 #include <vector>
 #include <time.h>
-
 #include "Nlohmann/json.hpp"
 
-#include "daemon.h"
 #include "Config.h"
 #include "Tools.h"
-
-Daemon daemon;
-void thread_tick() {
-    while (true) {
-        Sleep(1000);
-        daemon.tick();
-    }
-}
 
 const string pluginPath = "./plugins/AutoRestart";
 const string serverPath = wstring2string(GetProgramDir()) + "\\bedrock_server_mod.exe";
@@ -49,11 +39,23 @@ void setChannelMessage(nlohmann::json message) {
     newFile.close();
 }
 
+bool isTimeOut(nlohmann::json channelInfo, time_t timeout) {
+    if (channelInfo.contains("time")) {
+        time_t now = time(0);
+        time_t differ = now - channelInfo["time"];
+        if (differ < timeout) {
+            return false;
+        }
+    }
+    return false;
+}
+
 void setStatus2Start() {
     setChannelMessage(nlohmann::json{
         {"time", time(0) },
         {"instruction", "start"} });
 }
+
 int main()
 {
     // 加载配置
@@ -66,12 +68,35 @@ int main()
     }
     logger.info("Config load successfully.");
     
+    // 关闭其它守护进程
+    closeRunningDaemon();
+
     // 启动服务器
-    logger.info("Startup server..");
-    if (!getBDSStatus(serverPath)) {
-        startBDS(serverPath);
+    {
+        nlohmann::json channelInfo = getChannelMessage();
+        bool running = false;
+        if (channelInfo["instruction"] == "tick") {
+            if (channelInfo.contains("time")) {
+                time_t now = time(0);
+                time_t differ = now - channelInfo["time"];
+                if (differ < Config["timeout"]) {
+                    running = true;
+                }
+            }
+        }
+
+        if (running) {
+            logger.info("The server is already running.");
+        }
+        else {
+            logger.info("Starting server..");
+            setStatus2Start();
+            startBDS(serverPath);
+            while (!getBDSStatus(serverPath)) {
+                Sleep(100);
+            }
+        }
     }
-    setStatus2Start();
 
     // 隐藏窗口
     if (Config["hide_window"]) {
@@ -84,23 +109,9 @@ int main()
     while (true) {
         // 延时
         Sleep(delay);
-        // 读取信道文件
-        std::ifstream file;
-        file.open(pluginPath + "/channel.json", std::ios::in);
-        if (file) {
-            std::istreambuf_iterator<char> beg(file), end;
-            string configString = std::string(beg, end);
-            file.seekg(0, std::ios::end); //移动到文件尾部
-            file.close();
-            // 转为json
-            nlohmann::json channelInfo;
-            try {
-                channelInfo = nlohmann::json::parse(configString.c_str(), nullptr, true);
-            }
-            catch (const std::exception& ex) {
-                logger.error(ex.what());
-            }
+        nlohmann::json channelInfo = getChannelMessage();
 
+        if (channelInfo != NULL) {
             // 处理
             if (!channelInfo.is_null()) {
                 if (channelInfo.contains("instruction")) {
@@ -156,8 +167,8 @@ int main()
                                 startBDS(serverPath);
                             }
                             else {
-                                logger.info("The server is running..(" + std::to_string(differ) 
-                                    + "/"+ std::to_string(time_t(Config["timeout"])) + ")");
+                                logger.info("The server is running..(" + std::to_string(differ)
+                                    + "/" + std::to_string(time_t(Config["timeout"])) + ")");
                             }
                         }
                     }

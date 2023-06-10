@@ -7,6 +7,7 @@
 #include <Windows.h>
 #include <TlHelp32.h>
 #include <Psapi.h>
+#include "Config.h"
 
 typedef std::uint64_t hash_t;
 
@@ -173,6 +174,50 @@ bool getBDSStatus(string exePath) {
             // Compare the path
             if (path == string2wstring(exePath)) {
                 return true;
+            }
+            CloseHandle(handle);
+        }
+    }
+
+    return false;
+}
+
+bool closeRunningDaemon() {
+    constexpr const DWORD MAX_PATH_LEN = 32767;
+    auto* buffer = new wchar_t[MAX_PATH_LEN];
+    const string deamonPath = wstring2string(GetProgramDir()) + "\\AutoRestart.exe";
+
+    // get all processes id with name "AutoRestart.exe"
+    // and pid is not current process
+    std::vector<DWORD> pids;
+    PROCESSENTRY32 pe32;
+    pe32.dwSize = sizeof(PROCESSENTRY32);
+    HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hProcessSnap == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+    if (Process32First(hProcessSnap, &pe32)) {
+        do {
+            if (pe32.th32ProcessID != GetCurrentProcessId() &&
+                (wcscmp(pe32.szExeFile, L"AutoRestart.exe") == 0)) {
+                pids.push_back(pe32.th32ProcessID);
+            }
+        } while (Process32Next(hProcessSnap, &pe32));
+    }
+    CloseHandle(hProcessSnap);
+
+    for (auto& pid : pids) {
+        // Open process handle
+        auto handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_TERMINATE, false, pid);
+        if (handle) {
+            // Get the full path of the process
+            std::wstring path;
+            GetModuleFileNameExW(handle, nullptr, buffer, MAX_PATH_LEN);
+            path = buffer;
+            // Compare the path
+            if (path == string2wstring(deamonPath)) {
+                logger.info("Terminate running AutoRestart process:" + std::to_string(pid));
+                TerminateProcess(handle, 1);
             }
             CloseHandle(handle);
         }

@@ -6,7 +6,6 @@
 #include <io.h>
 #include "Nlohmann/json.hpp"
 #include "Logger.h"
-#include "daemon.h"
 
 Logger logger("Wheat");
 nlohmann::json Config;
