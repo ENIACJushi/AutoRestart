@@ -30,8 +30,33 @@ logger.setConsole(true);
 logger.setTitle('AutoRestart');
 logger.info('AutoRestart is running');
 
-// Config的初始化由exe进行
-var Config = JSON.parse(file.readFrom(PATH + "/Config.json"));
+// Config
+var Config;
+function loadConfig(){
+    var defaultConfig = {
+        "restart_enable": true,
+        "timeout"       : 30,
+        "hide_window"   : true,
+        "scan_interval" : 15,
+        "close_timeout" : 30,
+        "start_timeout" : 60,
+        "vote_enable"   : true,
+        "vote_percent"  : 0.66,
+        "vote_timeout"  : 300
+    }
+    Config = JSON.parse(file.readFrom(PATH + "/Config.json"));
+    var rewrite = false;
+    for(var key in defaultConfig){
+        if(Config[key] == null){
+            Config[key] = defaultConfig[key];
+            rewrite = true;
+        }
+    }
+    if(rewrite){
+        file.writeTo(PATH + "/Config.json", JSON.stringify(Config , null , '\t'));
+    }
+}
+loadConfig();
 
 // 加载定时重启列表
 if(!file.exists(PATH + "/RestartTask.json")) {
@@ -204,6 +229,13 @@ var DeamonJS = {
     }
 }
 
+// Heart beat
+var scan_interval = Config["scan_interval"] * 1000;
+DeamonJS.tick();
+setInterval(() => {
+    DeamonJS.tick();
+}, scan_interval);
+
 // Command
 var voteList = {};
 var waidRestartActivated = false;
@@ -327,16 +359,17 @@ var CommandManager = {
     },
 }
 
-// 心跳
-scan_interval = Config["scan_interval"] * 1000;
-DeamonJS.tick();
-setInterval(() => {
-    DeamonJS.tick();
-}, scan_interval);
-
 // ============== MC Events ========================
 mc.listen("onServerStarted", () => {
     CommandManager.set();
+    // 启动守护进程
+    if(Config["restart_enable"]){
+        system.newProcess("AutoRestart.exe --server", () => { });
+        // system.cmd("AutoRestart.exe",() => { });
+        logger.info("自动重启已启用。");
+    }else{
+        logger.info("自动重启未启用。");
+    }
 });
 
 mc.listen("onLeft", (pl) => {

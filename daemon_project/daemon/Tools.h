@@ -69,6 +69,17 @@ string wstring2string(std::wstring wstr)
     return result;
 }
 
+LPCWSTR stringToLPCWSTR(std::string orig)
+{
+    size_t origsize = orig.length() + 1;
+    const size_t newsize = 100;
+    size_t convertedChars = 0;
+    wchar_t* wcstring = (wchar_t*)malloc(sizeof(wchar_t) * (orig.length() - 1));
+    mbstowcs_s(&convertedChars, wcstring, origsize, orig.c_str(), _TRUNCATE);
+
+    return wcstring;
+}
+
 std::wstring GetProgramDir()
 {
     TCHAR exeFullPath[MAX_PATH]; // Full path 
@@ -182,10 +193,9 @@ bool getBDSStatus(string exePath) {
     return false;
 }
 
-bool closeRunningDaemon() {
+bool closeRunningDaemon(string deamonPath) {
     constexpr const DWORD MAX_PATH_LEN = 32767;
     auto* buffer = new wchar_t[MAX_PATH_LEN];
-    const string deamonPath = wstring2string(GetProgramDir()) + "\\AutoRestart.exe";
 
     // get all processes id with name "AutoRestart.exe"
     // and pid is not current process

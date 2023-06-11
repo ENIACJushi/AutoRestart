@@ -10,6 +10,7 @@
 Logger logger("Wheat");
 nlohmann::json Config;
 const nlohmann::json defaultConfig = nlohmann::json{
+    {"restart_enable", true},
     {"timeout", 30},
     {"scan_interval", 15},
     {"close_timeout", 30},

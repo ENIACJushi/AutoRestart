@@ -7,9 +7,13 @@
 
 #include "Config.h"
 #include "Tools.h"
+#include "main.h"
 
 const string pluginPath = "./plugins/AutoRestart";
-const string serverPath = wstring2string(GetProgramDir()) + "\\bedrock_server_mod.exe";
+
+const string basePath = wstring2string(GetProgramDir());
+const string serverPath = basePath + "\\bedrock_server_mod.exe";
+const string deamonPath = basePath + "\\AutoRestart.exe";
 
 nlohmann::json getChannelMessage() {
     std::ifstream file;
@@ -56,8 +60,33 @@ void setStatus2Start() {
         {"instruction", "start"} });
 }
 
-int main()
+int main(int argc, char* argv[])
 {
+    // 若被服务器调用，则启动一个新进程，关闭当前进程
+    for (int argi = 0; argi < argc; argi++) {
+        logger.info(argv[argi]);
+        if (strcmp(argv[argi], "--server") == 0) {
+            logger.info("Initiated by a server, start a new process and quit..");
+            ShellExecuteW(NULL, L"open", stringToLPCWSTR(deamonPath), NULL, stringToLPCWSTR(basePath), SW_SHOW);
+            /*
+            STARTUPINFO si;
+            PROCESS_INFORMATION pi;
+
+            ZeroMemory(&si, sizeof(si));
+            si.cb = sizeof(si);
+            ZeroMemory(&pi, sizeof(pi));
+            if (CreateProcessW(NULL, (LPWSTR)(LPCWSTR)deamonPath.c_str(), 0, 0, false, CREATE_DEFAULT_ERROR_MODE | CREATE_NO_WINDOW | DETACHED_PROCESS, 0, 0, &si, &pi) != false) {
+                
+                WaitForSingleObject(pi.hProcess, (2 * 1000));
+            }
+            else {
+                GetLastError();
+            }
+            */
+            return 0;
+        }
+    }
+    
     // 加载配置
     system("chcp 65001");
     logger.info("Loading config..");
@@ -69,7 +98,7 @@ int main()
     logger.info("Config load successfully.");
     
     // 关闭其它守护进程
-    closeRunningDaemon();
+    closeRunningDaemon(deamonPath);
 
     // 启动服务器
     {
