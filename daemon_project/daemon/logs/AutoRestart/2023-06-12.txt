@@ -1,0 +1,24 @@
+----------------
+2023-06-12 16:07:51 [Wheat] D:\AutoRestart\daemon_project\x64\Release\AutoRestart.exe
+2023-06-12 16:07:51 [Wheat] Loading config..
+2023-06-12 16:07:51 [Wheat] {
+ "hide_window": false,
+ "scan_interval": 5,
+ "start_timeout": 15,
+ "stop_timeout": 15,
+ "timeout": 30
+}
+2023-06-12 16:07:51 [Wheat] Config load successfully.
+2023-06-12 16:07:51 [Wheat] Starting server..
+----------------
+2023-06-12 16:08:08 [Wheat] D:\AutoRestart\daemon_project\x64\Release\AutoRestart.exe
+2023-06-12 16:08:08 [Wheat] Loading config..
+2023-06-12 16:08:08 [Wheat] {
+ "hide_window": false,
+ "scan_interval": 5,
+ "start_timeout": 15,
+ "stop_timeout": 15,
+ "timeout": 30
+}
+2023-06-12 16:08:08 [Wheat] Config load successfully.
+2023-06-12 16:08:08 [Wheat] Starting server..

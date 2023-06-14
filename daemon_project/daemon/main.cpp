@@ -62,6 +62,7 @@ void setStatus2Start() {
 
 int main(int argc, char* argv[])
 {
+    logger.writeFile("----------------");
     // 若被服务器调用，则启动一个新进程，关闭当前进程
     for (int argi = 0; argi < argc; argi++) {
         logger.info(argv[argi]);
