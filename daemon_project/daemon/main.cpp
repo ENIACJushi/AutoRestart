@@ -14,7 +14,6 @@ const string pluginPath = "./plugins/AutoRestart";
 const string basePath = wstring2string(GetProgramDir());
 const string serverPath = basePath + "\\bedrock_server_mod.exe";
 const string deamonPath = basePath + "\\AutoRestart.exe";
-
 nlohmann::json getChannelMessage() {
     std::ifstream file;
     file.open(pluginPath + "/channel.json", std::ios::in);
@@ -192,13 +191,14 @@ int main(int argc, char* argv[])
                             time_t now = time(0);
                             time_t differ = now - channelInfo["time"];
                             if (differ > Config["timeout"]) {
-                                logger.info("Timeout. Wakeup server..");
+                                logger.info("Timeout. Wakeup server..(" + std::to_string(differ) 
+                                    + "/" + std::to_string(time_t(Config["timeout"])) + ")");
                                 setStatus2Start();
                                 startBDS(serverPath);
                             }
                             else {
-                                logger.info("The server is running..(" + std::to_string(differ)
-                                    + "/" + std::to_string(time_t(Config["timeout"])) + ")");
+                                logger.debug("The server is running..(" + std::to_string(differ)
+                                    + "/" + std::to_string(time_t(Config["timeout"])) + ")", false);
                             }
                         }
                     }

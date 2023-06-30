@@ -3,7 +3,7 @@
   /* ---------------------------------------- *\
    *  Name        :  AutoRestart              *
    *  Description :  自动重启                  *
-   *  Version     :  0.1.6                    *
+   *  Version     :  0.1.9                    *
    *  Author      :  ENIAC_Jushi              *
   \* ---------------------------------------- */
 
@@ -18,7 +18,7 @@ function isJsonEmpty(obj){
 function kickALL(){
     var playerList = mc.getOnlinePlayers();
     for (var pl of playerList) {
-        pl.kick("Server stopping..");
+        pl.kick(L("kick_message"));
     }
 }
 function getPlayerAmount(enableIgnore=true){
@@ -81,7 +81,8 @@ function loadConfig(){
         "start_timeout" : 60,
         "vote_enable"   : true,
         "vote_percent"  : 0.66,
-        "vote_timeout"  : 300
+        "vote_timeout"  : 300,
+        "language"      : "zh_CN"
     }
     var path = PATH + "/Config.json";
     
@@ -104,6 +105,26 @@ function loadConfig(){
     }
 }
 loadConfig();
+
+//////// Language ////////
+var Lang = {};
+function loadLanguage(type){
+    var path = PATH + "/lang/" + Config["language"] +".json";
+    if(file.exists(path)){
+        Lang = JSON.parse(file.readFrom(path));
+    }
+    else{
+        logger.error("Language file \"" + path + "\" not found, please check your language folder.");
+    }
+}
+function L(format_string, ...args){
+    var result = Lang[format_string];
+    for(var i = 0; i < args.length; i++){
+        result.replaceAll("{" + (i+1).toString() + "}", args[i]);
+    }
+    return result;
+}
+loadLanguage();
 
 //////// Restart Task ////////
 if(!file.exists(PATH + "/RestartTask.json")) {
@@ -272,6 +293,9 @@ var DeamonJS = {
         }, null , '\t'));
     },
     startDaemon(){
+        this.stopping = false;
+        this.tick();
+        startHeartBeat();
         system.newProcess("AutoRestart.exe --server", () => { });
     }
 }
@@ -312,11 +336,12 @@ var VoteHelper = {
                 }
             }
     
-            mc.broadcast(`[投票重启] ${pl.realName} 退出游戏。(${voteAmount}/${totalAmount})`);
+            mc.broadcast(L("voter.player_quit", pl.realName, voteAmount, totalAmount));
+            
     
             // 检查
             if(voteAmount / totalAmount >= Config["vote_percent"]){
-                mc.broadcast(`[投票重启] ${realName} 服务器将在3秒后重启...`);
+                mc.broadcast(L("info.voter.success"));
                 setTimeout(() => {
                     mc.runcmd("restart")
                 }, 3000);
@@ -328,39 +353,46 @@ var VoteHelper = {
     },
     vote(player){
         var realName = player.realName
+        // 发起
         if(isJsonEmpty(voteList)){
-            mc.broadcast(`[投票重启] ${realName}, 发起了重启投票。使用"/voter"跟票。`);
+            mc.broadcast(L("voter.start", realName));
             voteList[realName] = true;
             this.timeoutID = setTimeout(() => {
                 this.cancel();
-                mc.broadcast(`[投票重启] 没有足够的玩家投票，重启失败。`);
+                mc.broadcast(L("voter.failed"));
             }, 1000 * Config["vote_timeout"]);
+            return true;
         }
 
         // 跟票
-        let playerList = mc.getOnlinePlayers();
-        let voteAmount = 0;
-        let totalAmount = 0;
-        for (var pl of playerList) {
-            if(!IgnoreList.inList(pl.realName)){
-                if(voteList[pl.realName] == true){
-                    voteAmount ++;
+        if(!voteList[realName]){
+            voteList[realName] = true;
+
+            let playerList = mc.getOnlinePlayers();
+            let voteAmount = 0;
+            let totalAmount = 0;
+            for (var pl of playerList) {
+                if(!IgnoreList.inList(pl.realName)){
+                    if(voteList[pl.realName] == true){
+                        voteAmount ++;
+                    }
+                    totalAmount ++;
                 }
-                totalAmount ++;
             }
+    
+            mc.broadcast(L("voter.vote", realName, voteAmount, totalAmount));
+            
+
+            // 检查
+            if(voteAmount / totalAmount >= Config["vote_percent"]){
+                mc.broadcast(L("voter.success"));
+                setTimeout(() => {
+                    mc.runcmd("restart")
+                }, 3000);
+            }
+            return true;
         }
-
-        mc.broadcast(`[投票重启] ${realName} 投出一票。(${voteAmount}/${totalAmount})`);
-
-        voteList[realName] = true;
-
-        // 检查
-        if(voteAmount / totalAmount >= Config["vote_percent"]){
-            mc.broadcast(`[投票重启] ${realName} 服务器将在3秒后重启...`);
-            setTimeout(() => {
-                mc.runcmd("restart")
-            }, 3000);
-        }
+        return false;    
     },
     cancel(){
         clearInterval(this.timeoutID);
@@ -516,10 +548,11 @@ var CommandManager = {
                 if(res.cancel){
                     if(waitRestartActivated){
                         waitRestartActivated = false;
-                        return out.success(`Shutdown task canceled.`);
+                        
+                        return out.success(L("restart.wait.cancel.success"));
                     }
                     else{
-                        return out.error(`There are no task waiting to be executed.`);
+                        return out.error(L("restart.wait.cancel.failed"));
                     }
                 }
                 else{
@@ -528,10 +561,10 @@ var CommandManager = {
                         if(getPlayerAmount() == 0){
                             mc.runcmd("restart");
                         }
-                        return out.success(`The server will be shut down after all players have left.`);
+                        return out.success(L("restart.wait.enable"));
                     }
                     else{
-                        return out.error("Auto restart not enabled, use \"restart enable\" to enable restart.");
+                        return out.error(L("restart.not_enable"));
                     }
                 }
             }
@@ -539,21 +572,19 @@ var CommandManager = {
                 if(res.reload){
                     var timeout = reloadAutoRestartTask();
                     if(timeout == -1){
-                        return out.success(`There are no tasks to execute.`);
+                        return out.success(L("restart.task.reload.failed")); // restart.tack.reload.failed
                     }
                     else{
                         var nowTime = new Date();
                         logger.info((`now: ${nowTime.toDateString()} ${nowTime.toTimeString()}`))
                         var executeTime = new Date(Date.parse(new Date()) + 1000*timeout);
-                        return out.success(`The server will restart on ${executeTime.toDateString()} ${executeTime.toTimeString()}`);
+                        return out.success(L("restart.task.reload.success", executeTime.toDateString() + executeTime.toTimeString()));
                     }
                 }
             }
             else if(res.enable){
                 if(!Config["restart_enable"]){
                     // Start daemon
-                    DeamonJS.tick();
-                    startHeartBeat();
                     DeamonJS.startDaemon();
                     
                     // Write config
@@ -563,10 +594,10 @@ var CommandManager = {
                     // Reload task
                     reloadAutoRestartTask();
 
-                    return out.success(`Auto Restart has been enabled.`);
+                    return out.success(L("restart.enable.success"));
                 }
                 else{
-                    return out.error("Auto Restart is already enabled, do nothing.");
+                    return out.error(L("restart.enable.failed"));
                 }
             }
             else if(res.disable){
@@ -579,42 +610,43 @@ var CommandManager = {
                     Config["restart_enable"] = false;
                     saveConfig();
 
-                    return out.success(`Auto Restart has been disabled.`);
+                    return out.success(L("restart.disable.success"));
                 }
                 else{
-                    return out.error("Auto Restart is already disabled, do nothing.");
+                    return out.error(L("restart.disable.failed"));
                 }
             }
             else if(res.ignore){
                 if(res.show){
                     var list = IgnoreList.toString();
                     if(list == ""){
-                        return out.success("No player is ignored.");
+                        return out.success(L("ignore.show.empty"));
                     }
                     else{
-                        return out.success("The following players are ignored:\n" + list);
+                        
+                        return out.success(L("ignore.show.success", list));
                     }
                 }
                 else if(res.add){
                     if(IgnoreList.add(res.name)){
-                        return out.success(`Player ${res.name} added to ignore list.`);
+                        return out.success(L("ignore.add.success", res.name));
                     }
                     else{
-                        return out.error(`Player ${res.name} is already on the ignore list.`);
+                        return out.error(L("ignore.add.failed", res.name));
                     }
                 }
                 else if(res.remove){
                     var amount = IgnoreList.remove(res.name);
                     if(amount > 0){
-                        return out.success(`Removed ${amount} player(s) from ignore list.`);
+                        return out.success(L("ignore.remove.success", amount));
                     }
                     else{
-                        return out.success(`Player ${res.name} is not on the list`)
+                        return out.success(L("ignore.remove.failed", res.name))
                     }
                 }
                 else if(res.reload){
                     IgnoreList.load();
-                    return out.success("The list has been reloaded.");
+                    return out.success(L("ignore.reload"));
                 }
                 
             }
@@ -624,13 +656,13 @@ var CommandManager = {
                         DeamonJS.restart();
                         mc.runcmd("stop");
                     });
-                    return out.success("Restart server..");
+                    return out.success(L("restart.info"));
                 }
                 else{
-                    return out.error("Auto restart not enabled, use \"restart enable\" to enable restart.");
+                    return out.error(L("restart.not_enable"));
                 }
             }
-            return out.error("Unknown command.");
+            return out.error(L("command.unknown"));
         });
         cmd.setup();
     },
@@ -659,24 +691,26 @@ var CommandManager = {
                 if(cmdOriIsGameMaster(_ori)){
                     if(VoteHelper.isVoting()){
                         VoteHelper.cancel();
-                        mc.broadcast("[投票重启] 管理员已取消投票。");
-                        return out.success("Vote canceled.");
+                        mc.broadcast(L("voter.cancel.info"));
+                        return out.success(L("voter.cancel.success"));
                     }
                     else{
-                        return out.error("There are no ongoing votes.");
+                        return out.error(L("voter.cancel.failed"));
                     }
                 }
                 else{
-                    return out.error("You don't have permission to execute this command.");
+                    return out.error(L("command.no_permission"));
                 }
             }
             else{
                 if(_ori.player){
                     // 投票操作
-                    VoteHelper.vote(_ori.player)
+                    if(!VoteHelper.vote(_ori.player)){
+                        return out.error(L("voter.vote.failed"));
+                    }
                 }
                 else{
-                    return out.error("The origin of this command must be a player.");
+                    return out.error(L("command.no_player"));
                 }
             }
         });
@@ -692,9 +726,9 @@ mc.listen("onServerStarted", () => {
     if(Config["restart_enable"]){
         DeamonJS.startDaemon();
         // system.cmd("AutoRestart.exe",() => { });
-        logger.info("自动重启已启用。");
+        logger.info(L("onstart_enabled"));
     }else{
-        logger.info("自动重启未启用。");
+        logger.info(L("onstart_disabled"));
     }
 });
 

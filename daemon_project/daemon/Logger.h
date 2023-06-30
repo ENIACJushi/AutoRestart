@@ -13,6 +13,7 @@ class Logger
 {
 private:
 	string name;
+	bool debug_mode;
 	string GetFormatTime()
 	{
 		time_t currentTime;
@@ -50,9 +51,11 @@ private:
 public:
 	Logger(){
 		name = "Wheat";
+		debug_mode = false;
 	}
-	Logger(string name_) {
+	Logger(string name_, bool debug_) {
 		name = name_;
+		debug_mode = debug_;
 	}
 	void writeFile(string msg) {
 		if (_access("logs/AutoRestart", 0) == -1) {
@@ -79,6 +82,22 @@ public:
 		cout << newMsg << endl;
 		if (write) writeFile(newMsg);
 	}
+
+	void debug(string msg, bool write = true) {
+		if (debug_mode) {
+			string newMsg = addHead(msg);
+			cout << newMsg << endl;
+			if (write) writeFile(newMsg);
+		}
+	}
+	void debug(int msg, bool write = true) {
+		if (debug_mode) {
+			string newMsg = addHead(std::to_string(msg));
+			cout << newMsg << endl;
+			if (write) writeFile(newMsg);
+		}
+	}
+
 	void error(string msg, bool write = true) {
 		string newMsg = "Error " + addHead(msg);
 		cout << newMsg << endl;

@@ -1,0 +1,43 @@
+{
+    "kick_message"         : "Server stopping..",
+    "command.unknown"      : "Unknown command.",
+    "command.no_permission": "You don't have permission to execute this command.",
+    "command.no_player"    : "The origin of this command must be a player in server.",
+
+    "onstart_enabled"     : "AutoRestart is enabled.",
+    "onstart_disabled"    : "AutoRestart is not enabled.",
+
+    "voter.start"         : "[Vote Restart] {1} called for a restarting vote. Use \"/voter\" to follow the vote.",
+    "voter.vote"          : "[Vote Restart] {1} cast a vote. ({2}/{3})",
+    "voter.vote.failed"   : "You had voted before.",
+    "voter.success"       : "[Vote Restart] The server will restart in 3 seconds...",
+    "voter.failed"        : "[Vote Restart] Not enough players voted and the restart failed。",
+    "voter.player_quit"   : "[Vote Restart] {1} left the game. ({2}/{3})",
+    "voter.cancel.info"   : "[Vote Restart] The gamemaster has canceled the vote.",
+    "voter.cancel.success": "Vote canceled.",
+    "voter.cancel.failed" : "There are no ongoing votes.",
+    
+    "restart.helper"      : "",
+    "restart.info"        : "Restart server..",
+
+    "restart.enable.success"  : "Auto Restart has been enabled.",
+    "restart.enable.failed"   : "Auto Restart is already enabled, do nothing.",
+    "restart.disable.success" : "Auto Restart has been disabled.",
+    "restart.disable.failed"  : "Auto Restart is already disabled, do nothing.",
+    "restart.not_enable"      : "Auto restart not enabled, use \"restart enable\" to enable restart.",
+
+    "ignore.show.empty"       : "No player is ignored.",
+    "ignore.show.success"     : "The following players are ignored:\n{1}",
+    "ignore.add.success"      : "Player {1} added to ignore list.",
+    "ignore.add.failed"       : "Player {1} is already on the ignore list.",
+    "ignore.remove.success"   : "Removed {1} player(s) from ignore list.",
+    "ignore.remove.failed"    : "Player {1} is not on the list",
+    "ignore.reload"           : "The list has been reloaded.",
+
+    "restart.wait.cancel.success" : "Shutdown task canceled.",
+    "restart.wait.cancel.failed"  : "There are no task waiting to be executed.",
+    "restart.wait.enable"         : "The server will be shut down after all players have left.",
+
+    "restart.task.reload.failed" : "There are no tasks to execute.",
+    "restart.task.reload.success": "The server will restart on {1}"
+}

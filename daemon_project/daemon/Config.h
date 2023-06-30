@@ -7,7 +7,7 @@
 #include "Nlohmann/json.hpp"
 #include "Logger.h"
 
-Logger logger("Wheat");
+Logger logger("Wheat", false);
 nlohmann::json Config;
 const nlohmann::json defaultConfig = nlohmann::json{
     {"restart_enable", true},

@@ -1,0 +1,43 @@
+{
+    "kick_message"         : "服务器正在关闭······",
+    "command.unknown"      : "未知的指令",
+    "command.no_permission": "你没有使用这个指令的权限。",
+    "command.no_player"    : "使用这个命令的对象必须是服务器内的玩家。",
+    
+    "onstart_enabled"     : "自动重启已启用。",
+    "onstart_disabled"    : "自动重启未启用。",
+
+    "voter.start"         : "[投票重启] {1} 发起了重启投票。使用\"/voter\"跟票。",
+    "voter.vote"          : "[投票重启] {1} 投出一票。({2}/{3})",
+    "voter.vote.failed"   : "你已经投过票了^ ^",
+    "voter.success"       : "[投票重启] 服务器将在3秒后重启...",
+    "voter.failed"        : "[投票重启] 没有足够的玩家投票，重启失败。",
+    "voter.player_quit"   : "[投票重启] {1} 退出游戏。({2}/{3})",
+    "voter.cancel.info"   : "[投票重启] 管理员已取消投票。",
+    "voter.cancel.success": "投票已取消。",
+    "voter.cancel.failed" : "没有正在进行的投票。",
+
+    "restart.helper"      : "",
+    "restart.info"        : "正在重启服务器······",
+
+    "restart.enable.success"  : "自动重启已启用",
+    "restart.enable.failed"   : "自动重启已经是启用状态了，不需要再启用",
+    "restart.disable.success" : "自动重启已禁用",
+    "restart.disable.failed"  : "自动重启已经是禁用状态啦，不需要再禁用",
+    "restart.not_enable"      : "自动重启未启用，使用\"/restart enable\"启用自动重启",
+
+    "ignore.show.empty"       : "没有玩家被忽视",
+    "ignore.show.success"     : "以下玩家被忽视:\n{1}",
+    "ignore.add.success"      : "玩家 {1} 已被加入忽视列表",
+    "ignore.add.failed"       : "玩家 {1} 已经在忽视列表内了，不需要添加",
+    "ignore.remove.success"   : "玩家 {1} 已从忽视列表移除",
+    "ignore.remove.failed"    : "玩家 {1} 不在忽视列表内",
+    "ignore.reload"           : "忽视列表已重载",
+
+    "restart.wait.cancel.success" : "预约重启已取消",
+    "restart.wait.cancel.failed"  : "没有等待执行的预约重启",
+    "restart.wait.enable"         : "服务器将在所有玩家离开后重启",
+
+    "restart.task.reload.failed" : "没有可执行的重启任务",
+    "restart.task.reload.success": "服务器将在 {1} 重启"
+}
