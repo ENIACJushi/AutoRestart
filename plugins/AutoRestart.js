@@ -120,7 +120,7 @@ function loadLanguage(type){
 function L(format_string, ...args){
     var result = Lang[format_string];
     for(var i = 0; i < args.length; i++){
-        result.replaceAll("{" + (i+1).toString() + "}", args[i]);
+        result = result.replaceAll("{" + (i+1).toString() + "}", args[i]);
     }
     return result;
 }
@@ -338,7 +338,6 @@ var VoteHelper = {
     
             mc.broadcast(L("voter.player_quit", pl.realName, voteAmount, totalAmount));
             
-    
             // 检查
             if(voteAmount / totalAmount >= Config["vote_percent"]){
                 mc.broadcast(L("info.voter.success"));
@@ -361,38 +360,39 @@ var VoteHelper = {
                 this.cancel();
                 mc.broadcast(L("voter.failed"));
             }, 1000 * Config["vote_timeout"]);
+            // 检查
+            this.check();
             return true;
         }
 
         // 跟票
         if(!voteList[realName]){
             voteList[realName] = true;
-
-            let playerList = mc.getOnlinePlayers();
-            let voteAmount = 0;
-            let totalAmount = 0;
-            for (var pl of playerList) {
-                if(!IgnoreList.inList(pl.realName)){
-                    if(voteList[pl.realName] == true){
-                        voteAmount ++;
-                    }
-                    totalAmount ++;
-                }
-            }
-    
-            mc.broadcast(L("voter.vote", realName, voteAmount, totalAmount));
-            
-
-            // 检查
-            if(voteAmount / totalAmount >= Config["vote_percent"]){
-                mc.broadcast(L("voter.success"));
-                setTimeout(() => {
-                    mc.runcmd("restart")
-                }, 3000);
-            }
+            var amounts = this.check();
+            mc.broadcast(L("voter.vote", realName, amounts[0], amounts[1]));
             return true;
         }
         return false;    
+    },
+    check(){
+        let playerList = mc.getOnlinePlayers();
+        let voteAmount = 0;
+        let totalAmount = 0;
+        for (var pl of playerList) {
+            if(!IgnoreList.inList(pl.realName)){
+                if(voteList[pl.realName] == true){
+                    voteAmount ++;
+                }
+                totalAmount ++;
+            }
+        }
+        if(voteAmount / totalAmount >= Config["vote_percent"]){
+            mc.broadcast(L("voter.success"));
+            setTimeout(() => {
+                mc.runcmd("restart")
+            }, 3000);
+        }
+        return [voteAmount, totalAmount];
     },
     cancel(){
         clearInterval(this.timeoutID);
