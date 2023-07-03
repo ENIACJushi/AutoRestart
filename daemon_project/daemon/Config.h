@@ -15,7 +15,6 @@ const nlohmann::json defaultConfig = nlohmann::json{
     {"scan_interval", 15},
     {"close_timeout", 30},
     {"start_timeout", 60},
-    {"hide_window", false},
     {"vote_percent", 0.66},
     {"vote_timeout", 300},
     {"vote_enable", true}

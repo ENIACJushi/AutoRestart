@@ -1,0 +1,20 @@
+----------------
+2023-07-03 20:45:59 [Wheat] D:\AutoRestart\daemon_project\x64\Release\AutoRestart.exe
+2023-07-03 20:46:00 [Wheat] Loading config..
+2023-07-03 20:46:00 [Wheat] {
+ "hide_window": false,
+ "scan_interval": 5,
+ "start_timeout": 15,
+ "stop_timeout": 15,
+ "timeout": 30
+}
+2023-07-03 20:46:00 [Wheat] Config load successfully.
+2023-07-03 20:46:00 [Wheat] Starting server..
+=======================================
+2023-07-03 20:58:16 [Wheat] ?Start the non-argument mode, close the other daemons, and then the current process.?
+=======================================
+2023-07-03 20:59:22 [Wheat] Start the non-argument mode, close the other daemons, and then the current process.
+=======================================
+2023-07-03 21:02:07 [Wheat] Start the non-argument mode, close the other daemons, and then the current process.
+=======================================
+2023-07-03 21:06:19 [Wheat] Start with no argument, close the other daemons, and then the current process.

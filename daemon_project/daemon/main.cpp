@@ -9,6 +9,8 @@
 #include "Tools.h"
 #include "main.h"
 
+#pragma comment( linker, "/subsystem:windows /entry:mainCRTStartup" )
+
 const string pluginPath = "./plugins/AutoRestart";
 
 const string basePath = wstring2string(GetProgramDir());
@@ -61,33 +63,31 @@ void setStatus2Start() {
 
 int main(int argc, char* argv[])
 {
-    logger.writeFile("----------------");
-    // 若被服务器调用，则启动一个新进程，关闭当前进程
+    logger.writeFile("=======================================");
+    
+    /// 参数启动 | none; start; server
+    bool start = false;
     for (int argi = 0; argi < argc; argi++) {
-        logger.info(argv[argi]);
+        // server | 若被服务器调用，则启动一个新进程，关闭当前进程
         if (strcmp(argv[argi], "--server") == 0) {
             logger.info("Initiated by a server, start a new process and quit..");
-            ShellExecuteW(NULL, L"open", stringToLPCWSTR(deamonPath), NULL, stringToLPCWSTR(basePath), SW_SHOW);
-            /*
-            STARTUPINFO si;
-            PROCESS_INFORMATION pi;
-
-            ZeroMemory(&si, sizeof(si));
-            si.cb = sizeof(si);
-            ZeroMemory(&pi, sizeof(pi));
-            if (CreateProcessW(NULL, (LPWSTR)(LPCWSTR)deamonPath.c_str(), 0, 0, false, CREATE_DEFAULT_ERROR_MODE | CREATE_NO_WINDOW | DETACHED_PROCESS, 0, 0, &si, &pi) != false) {
-                
-                WaitForSingleObject(pi.hProcess, (2 * 1000));
-            }
-            else {
-                GetLastError();
-            }
-            */
+            ShellExecuteW(NULL, L"open", stringToLPCWSTR(deamonPath), stringToLPCWSTR("--start"), stringToLPCWSTR(basePath), SW_SHOW);
             return 0;
         }
+        // start | 若以start参数启动，则正常开始运行
+        else if (strcmp(argv[argi], "--start") == 0) {
+            start = true;
+        }
     }
-    
-    // 加载配置
+    // none | 若以无参数模式启动，则关闭同路径下的监控进程，然后关闭自己
+    // 用于服务器无法正常启动但监控进程仍然在运行，导致无限重启的情况
+    if (!start) {
+        logger.info("Start with no argument, close the other daemons, and then the current process.");
+        closeRunningDaemon(deamonPath);
+        return 0;
+    }
+
+    /// 加载配置
     system("chcp 65001");
     logger.info("Loading config..");
     if (!loadConfig(pluginPath, "Config.json")) {
@@ -97,10 +97,10 @@ int main(int argc, char* argv[])
     }
     logger.info("Config load successfully.");
     
-    // 关闭其它守护进程
+    /// 关闭其它守护进程
     closeRunningDaemon(deamonPath);
 
-    // 启动服务器
+    /// 启动服务器
     {
         nlohmann::json channelInfo = getChannelMessage();
         bool running = false;
@@ -127,13 +127,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    // 隐藏窗口
-    if (Config["hide_window"]) {
-        HWND hwnd = GetForegroundWindow();
-        ShowWindow(hwnd, 0);
-    }
-
-    // 检测循环
+    /// 检测循环
     DWORD delay = 1000 * Config["scan_interval"];
     while (true) {
         // 延时

@@ -5,7 +5,7 @@
 #include <fstream>
 
 using std::string;
-using std::cout;
+// using std::cout;
 using std::endl;
 using std::ofstream;
 
@@ -74,38 +74,38 @@ public:
 	}
 	void info(string msg, bool write=true) {
 		string newMsg = addHead(msg);
-		cout << newMsg << endl;
+		// cout << newMsg << endl;
 		if (write) writeFile(newMsg);
 	}
 	void info(int msg, bool write = true) {
 		string newMsg = addHead(std::to_string(msg));
-		cout << newMsg << endl;
+		// cout << newMsg << endl;
 		if (write) writeFile(newMsg);
 	}
 
 	void debug(string msg, bool write = true) {
 		if (debug_mode) {
 			string newMsg = addHead(msg);
-			cout << newMsg << endl;
+			// cout << newMsg << endl;
 			if (write) writeFile(newMsg);
 		}
 	}
 	void debug(int msg, bool write = true) {
 		if (debug_mode) {
 			string newMsg = addHead(std::to_string(msg));
-			cout << newMsg << endl;
+			// cout << newMsg << endl;
 			if (write) writeFile(newMsg);
 		}
 	}
 
 	void error(string msg, bool write = true) {
 		string newMsg = "Error " + addHead(msg);
-		cout << newMsg << endl;
+		// cout << newMsg << endl;
 		if (write) writeFile(newMsg);
 	}
 	void error(int msg, bool write = true) {
 		string newMsg = "Error " + addHead(std::to_string(msg));
-		cout << newMsg << endl;
+		// cout << newMsg << endl;
 		if (write) writeFile(newMsg);
 	}
 };

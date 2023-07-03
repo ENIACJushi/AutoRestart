@@ -3,7 +3,7 @@
   /* ---------------------------------------- *\
    *  Name        :  AutoRestart              *
    *  Description :  自动重启                  *
-   *  Version     :  0.1.9                    *
+   *  Version     :  0.1.10                   *
    *  Author      :  ENIAC_Jushi              *
   \* ---------------------------------------- */
 
@@ -75,7 +75,6 @@ function loadConfig(){
     var defaultConfig = {
         "restart_enable": true,
         "timeout"       : 30,
-        "hide_window"   : true,
         "scan_interval" : 15,
         "close_timeout" : 30,
         "start_timeout" : 60,
@@ -138,7 +137,9 @@ if(!file.exists(PATH + "/RestartTask.json")) {
         {
             "type": "Time", // 到达设定时刻重启,格式: 周-小时:分钟, 若不设置周则每天都重启
             "time": "6-23:59",
-            "message": "", // 重启信息
+            "message": {
+                1:"a"
+            }, // 重启信息
             "enable": false
         }
     ] , null , '\t'));
@@ -704,9 +705,14 @@ var CommandManager = {
             }
             else{
                 if(_ori.player){
-                    // 投票操作
-                    if(!VoteHelper.vote(_ori.player)){
-                        return out.error(L("voter.vote.failed"));
+                    if(Config["restart_enable"]){
+                        // 投票操作
+                        if(!VoteHelper.vote(_ori.player)){
+                            return out.error(L("voter.vote.failed"));
+                        }
+                    }
+                    else{
+                        return out.error(L("restart.not_enable"));
                     }
                 }
                 else{
