@@ -39,5 +39,6 @@
     "restart.wait.enable"         : "The server will be shut down after all players have left.",
 
     "restart.task.reload.failed" : "There are no tasks to execute.",
-    "restart.task.reload.success": "The server will restart on {1}"
+    "restart.task.reload.success": "The server will restart on {1}",
+    "restart.task.message.default": "[Auto Restart] The server will restart in §e{1}§r second(s)."
 }

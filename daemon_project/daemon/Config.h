@@ -10,14 +10,7 @@
 Logger logger("Wheat", false);
 nlohmann::json Config;
 const nlohmann::json defaultConfig = nlohmann::json{
-    {"restart_enable", true},
-    {"timeout", 30},
-    {"scan_interval", 15},
-    {"close_timeout", 30},
-    {"start_timeout", 60},
-    {"vote_percent", 0.66},
-    {"vote_timeout", 300},
-    {"vote_enable", true}
+    {"scan_interval", 15}
 };
 
 bool loadConfig(string folderPath, string fileName) {
@@ -34,16 +27,10 @@ bool loadConfig(string folderPath, string fileName) {
     // load Config.json
     std::fstream file;
     file.open(folderPath + "/" + fileName, std::ios::in);
-    // 不存在，创建
+    // 不存在，使用默认配置（不创建）
     if (!file){
-        logger.info("Config file not exist, create..");
-        std::fstream newFile;
-        newFile.open(folderPath + "/" + fileName, std::fstream::in | std::fstream::out | std::fstream::trunc);
-        newFile << defaultConfig.dump(1);
-        logger.info(defaultConfig.dump(1));
-        newFile.close();
+        logger.info("Config file not exist, using default config..");
         Config = defaultConfig;
-        logger.info("Create successfully.");
         return true;
     }
     else {
@@ -53,7 +40,7 @@ bool loadConfig(string folderPath, string fileName) {
         file.close();
         try {
             Config = nlohmann::json::parse(configString.c_str(), nullptr, true);
-            logger.info(Config.dump(1));
+            // logger.info(Config.dump(1));
         }
         catch (const std::exception& ex) {
             logger.error(ex.what());

@@ -3,9 +3,11 @@
   /* ---------------------------------------- *\
    *  Name        :  AutoRestart              *
    *  Description :  自动重启                  *
-   *  Version     :  0.1.10                   *
+   *  Version     :  1.0.0                    *
    *  Author      :  ENIAC_Jushi              *
   \* ---------------------------------------- */
+
+// TODO: 将定时重启模块转移到exe，新建线程来执行，因为js的倒计时受tps影响较大
 
 // ================== Tools ==================
 function isJsonEmpty(obj){
@@ -59,6 +61,7 @@ function cmdOriIsGameMaster(_ori){
 function isNameEqual(name1, name2){
     return name1.toLocaleLowerCase() == name2.toLocaleLowerCase();
 }
+
 // ================== Initialize ===================
 let version = 0.1
 const PATH = "plugins/AutoRestart";
@@ -74,10 +77,7 @@ function saveConfig(){
 function loadConfig(){
     var defaultConfig = {
         "restart_enable": true,
-        "timeout"       : 30,
-        "scan_interval" : 15,
-        "close_timeout" : 30,
-        "start_timeout" : 60,
+        "scan_interval" : 1,
         "vote_enable"   : true,
         "vote_percent"  : 0.66,
         "vote_timeout"  : 300,
@@ -118,6 +118,9 @@ function loadLanguage(type){
 }
 function L(format_string, ...args){
     var result = Lang[format_string];
+    if(result==undefined){
+        return result;
+    }
     for(var i = 0; i < args.length; i++){
         result = result.replaceAll("{" + (i+1).toString() + "}", args[i]);
     }
@@ -125,33 +128,120 @@ function L(format_string, ...args){
 }
 loadLanguage();
 
+//////// Deamon ////////
+var DeamonJS = {
+    stopping: false,
+    path: PATH + "/channel.json",
+    // 关闭守护进程
+    stop(){
+        if(this.stopping) return;
+        this.stopping = true;
+        file.writeTo(this.path, JSON.stringify({
+            "type": "disable",
+            "extra": "disable"
+        }, null , '\t'));
+    },
+    start(){
+        this.stopping = false;
+        system.newProcess("AutoRestart.exe --server", () => { });
+    },
+    // 已收到信息，将信息置为空
+    recieved(){
+        file.writeTo(this.path, "null");
+    },
+    // 处理守护进程发来的信息
+    processMessage(){
+        var msg = file.readFrom(this.path);
+        if(msg && msg != "null"){
+            msg = JSON.parse(msg);
+            switch(msg["type"]){
+                case "stop":       // 停服
+                    mc.runcmd("stop");
+                    break;
+                case "stop_delay": // 延迟停服
+                    break;
+                case "restart":    // 重启
+                    mc.runcmd("restart");
+                    break;
+                case "restart_delay": // 延迟重启
+                    var time = msg["extra"];
+                    mc.broadcast(L("restart.task.message.default", time));
+                    if(time > 10){
+                        time - 10;
+                        setTimeout(() => {
+                            mc.broadcast(L("restart.task.message.default", 10));
+                            setTimeout(() => {
+                                mc.broadcast(L("restart.task.message.default", 5));
+                                setTimeout(() => {
+                                    mc.broadcast(L("restart.task.message.default", 3));
+                                    setTimeout(() => {
+                                        mc.broadcast(L("restart.task.message.default", 1));
+                                        setTimeout(() => {
+                                            mc.runcmd("restart");
+                                        }, 1000);
+                                    }, 2000);
+                                }, 2000);
+                            }, 5000);
+
+                        }, time*1000);
+                    }
+                    else{
+                        mc.broadcast(L("restart.task.message.default", time));
+                        setTimeout(() => {
+                            mc.runcmd("restart");
+                        }, time*1000);
+                    }
+                    this.recieved();
+                    break;
+                case "message":    // 发送全服信息
+                    mc.broadcast(L(msg["extra"]));
+                    this.recieved();
+                    break;
+                default:
+                    break;
+            }
+        }
+    },
+    createTask(time){
+        file.writeTo(this.path, JSON.stringify({
+            "type": "restart_task",
+            "extra": time
+        }, null , '\t'));
+    }
+}
+
 //////// Restart Task ////////
 if(!file.exists(PATH + "/RestartTask.json")) {
     file.writeTo(PATH + "/RestartTask.json", JSON.stringify([
         {
-            "type": "Timeout", // 任务加载后多少秒重启
+            "type": "Timeout", // 任务加载后[time]秒重启
             "time": 60,
-            "message": "", // 重启信息
             "enable": false
         },
         {
             "type": "Time", // 到达设定时刻重启,格式: 周-小时:分钟, 若不设置周则每天都重启
             "time": "6-23:59",
-            "message": {
-                1:"a"
-            }, // 重启信息
+            "enable": false
+        },
+        {
+            "type": "Time", // 到达设定时刻重启,格式: 周-小时:分钟, 若不设置周则每天都重启
+            "time": "23:59",
             "enable": false
         }
     ] , null , '\t'));
 }
-var AutoRestartTask = JSON.parse(file.readFrom(PATH + "/RestartTask.json"));
+
 var restartTaskID = -1;
 function loadAutoRestartTask(){
-    var myDate = new Date();
-    var now_day = myDate.getDay(); // 获取星期(1 ~ 7)
-    var now_hours = myDate.getHours(); // 获取小时(0 ~ 23)
-    var now_minutes = myDate.getMinutes(); // 获取分钟(0-59)
-    var min_timeout = -1;
+    let AutoRestartTask = JSON.parse(file.readFrom(PATH + "/RestartTask.json"));
+    let timeout_seconds = -1; // 单位：秒
+    let selected_task = null;
+
+    // 获取倒计时 分钟
+    let myDate = new Date();
+    let now_day = myDate.getDay(); // 获取星期(1 ~ 7)
+    let now_hours = myDate.getHours(); // 获取小时(0 ~ 23)
+    let now_minutes = myDate.getMinutes(); // 获取分钟(0-59)
     for(var task of AutoRestartTask){
         if(!task["enable"]) continue;
         let time;
@@ -237,85 +327,53 @@ function loadAutoRestartTask(){
         }
     
         // 与当前最近时间比较
-        if(min_timeout == -1){
-            min_timeout = time;
+        if(timeout_seconds == -1){
+            timeout_seconds = time;
+            selected_task = task;
         }
         else{
-            min_timeout = Math.min(time, min_timeout);
+            if(time < timeout_seconds){
+                timeout_seconds = time;
+                selected_task = task;
+            }
         }
     }
-
+    // 至此， timeout_seconds 已对齐到分钟，是60的倍数
+    
     // 启动计时器，因为是重启任务, 所以只需要加载时间最近的
-    if(min_timeout != -1){
-        restartTaskID = setTimeout(() => {
-            mc.runcmd("restart");
-        }, min_timeout*1000);
+    if(timeout_seconds != -1){
+        // 对齐倒计时 秒
+        var second = myDate.getSeconds();
+        timeout_seconds -= second;
+        // 由守护进程计时
+        DeamonJS.createTask(timeout_seconds);
+
+        // 由服务器计时
+        // // 重启前的信息
+        // selected_task["message"]
+
+        // restartTaskID = setTimeout(() => {
+        //     mc.runcmd("restart");
+        // }, (timeout_seconds - second)*1000);
+    
     }
-    return min_timeout;
+    return timeout_seconds;
 }
 
 function cancelAutoRestartTask(){
-    if(restartTaskID != -1){
-        clearInterval(restartTaskID);
-    }
+    // if(restartTaskID != -1){
+    //     clearInterval(restartTaskID);
+    // }
+    // restartTaskID = -1;
+    DeamonJS.createTask(-1);
 }
 
 function reloadAutoRestartTask(){
     cancelAutoRestartTask();
-    AutoRestartTask = JSON.parse(file.readFrom(PATH + "/RestartTask.json"));
     return loadAutoRestartTask();
 }
 loadAutoRestartTask();
 
-//////// Deamon ////////
-var DeamonJS = {
-    stopping: false,
-    tick(){
-        if(this.stopping) return;
-        file.writeTo(PATH + "/channel.json", JSON.stringify({
-            "time": Math.floor(Date.parse(new Date())/1000),
-            "instruction": "tick"
-        }, null , '\t'));
-    },
-    stop_daemon(){
-        if(this.stopping) return;
-        this.stopping = true;
-        file.writeTo(PATH + "/channel.json", JSON.stringify({
-            "time": Math.floor(Date.parse(new Date())/1000),
-            "instruction": "stop"
-        }, null , '\t'));
-    },
-    restart(){
-        if(this.stopping) return;
-        this.stopping = true;
-        file.writeTo(PATH + "/channel.json", JSON.stringify({
-            "time": Math.floor(Date.parse(new Date())/1000),
-            "instruction": "restart"
-        }, null , '\t'));
-    },
-    startDaemon(){
-        this.stopping = false;
-        this.tick();
-        startHeartBeat();
-        system.newProcess("AutoRestart.exe --server", () => { });
-    }
-}
-// Heart beat
-var scan_interval = Config["scan_interval"] * 1000;
-DeamonJS.tick();
-var heartId = -1;
-function stopHeartBeat(){
-    if(heartId !=- 1){
-        clearInterval(restartTaskID);
-    }
-}
-function startHeartBeat(){
-    stopHeartBeat();
-    heartId = setInterval(() => {
-        DeamonJS.tick();
-    }, scan_interval);
-}
-startHeartBeat();
 //////// Vote ////////
 var voteList = {};
 var VoteHelper = {
@@ -579,14 +637,14 @@ var CommandManager = {
                         var nowTime = new Date();
                         logger.info((`now: ${nowTime.toDateString()} ${nowTime.toTimeString()}`))
                         var executeTime = new Date(Date.parse(new Date()) + 1000*timeout);
-                        return out.success(L("restart.task.reload.success", executeTime.toDateString() + executeTime.toTimeString()));
+                        return out.success(L("restart.task.reload.success", executeTime.toDateString() + " " + executeTime.toTimeString()));
                     }
                 }
             }
             else if(res.enable){
                 if(!Config["restart_enable"]){
                     // Start daemon
-                    DeamonJS.startDaemon();
+                    DeamonJS.start();
                     
                     // Write config
                     Config["restart_enable"] = true;
@@ -604,8 +662,7 @@ var CommandManager = {
             else if(res.disable){
                 if(Config["restart_enable"]){
                     // Stop daemon
-                    DeamonJS.stop_daemon();
-                    stopHeartBeat();
+                    DeamonJS.stop();
 
                     // Write config
                     Config["restart_enable"] = false;
@@ -653,8 +710,8 @@ var CommandManager = {
             }
             else{
                 if(Config["restart_enable"]){
+                    is_restart = true;
                     kickAndRun(() => {
-                        DeamonJS.restart();
                         mc.runcmd("stop");
                     });
                     return out.success(L("restart.info"));
@@ -671,10 +728,9 @@ var CommandManager = {
         var cmd = mc.newCommand("wstop", "Kick players and stop server", PermType.GameMasters)
         cmd.overload ();
         cmd.setCallback((_cmd, _ori, out, res) => {
-            kickAndRun(() => {
-                DeamonJS.stop_daemon();
-                mc.runcmd("stop");
-            });
+            DeamonJS.stop();
+            could_stop = true;
+            mc.runcmd("stop");
         });
         cmd.setup();
     },
@@ -729,8 +785,9 @@ var CommandManager = {
 mc.listen("onServerStarted", () => {
     CommandManager.set();
     // 启动守护进程
+    DeamonJS.recieved(); // 避免被先前未处理的消息影响
     if(Config["restart_enable"]){
-        DeamonJS.startDaemon();
+        DeamonJS.start();
         // system.cmd("AutoRestart.exe",() => { });
         logger.info(L("onstart_enabled"));
     }else{
@@ -743,8 +800,34 @@ mc.listen("onLeft", (pl) => {
     VoteHelper.playerLeft(pl);
     // 关服任务已开启
     if(waitRestartActivated){
-        if(getPlayerAmount() == 0){
+        // 仅剩正在退出的一人
+        if(getPlayerAmount() == 1){
             mc.runcmd("restart");
         }
     }
 });
+
+var could_stop = false;
+var is_restart = false;
+mc.listen("onConsoleCmd",(cmd)=>{
+    if(cmd == "stop"){
+        if(could_stop){
+            return true;
+        }
+        else{
+            kickAndRun(() => {
+                if(!is_restart) DeamonJS.stop();
+                could_stop = true;
+                mc.runcmd("stop");
+            });
+            return false;
+        }
+    }
+    return true;
+})
+
+// 处理信息
+var scan_interval = Config["scan_interval"] * 1000;
+setInterval(() => {
+    DeamonJS.processMessage();
+}, scan_interval);

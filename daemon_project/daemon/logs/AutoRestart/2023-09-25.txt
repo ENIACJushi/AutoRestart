@@ -1,0 +1,20 @@
+=======================================
+2023-09-25 15:44:13 [Wheat] Start with no argument, close the other daemons, and then the current process.
+=======================================
+2023-09-25 16:01:19 [Wheat] Start with no argument, close the other daemons, and then the current process.
+=======================================
+2023-09-25 16:09:31 [Wheat] Start with no argument, close the other daemons, and then the current process.
+=======================================
+2023-09-25 16:57:04 [Wheat] Start with no argument, close the other daemons, and then the current process.
+=======================================
+2023-09-25 16:57:52 [Wheat] Start with no argument, close the other daemons, and then the current process.
+=======================================
+2023-09-25 17:00:26 [Wheat] Start with no argument, close the other daemons, and then the current process.
+=======================================
+2023-09-25 17:04:57 [Wheat] Start with no argument, close the other daemons, and then the current process.
+=======================================
+2023-09-25 17:17:27 [Wheat] Start with no argument, close the other daemons, and then the current process.
+=======================================
+2023-09-25 17:17:53 [Wheat] Start with no argument, close the other daemons, and then the current process.
+=======================================
+2023-09-25 17:24:40 [Wheat] Start with no argument, close the other daemons, and then the current process.

@@ -29,7 +29,7 @@
     <ClInclude Include="Tools.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="main.h">
+    <ClInclude Include="ServerInterface.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

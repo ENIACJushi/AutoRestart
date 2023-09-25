@@ -39,5 +39,6 @@
     "restart.wait.enable"         : "服务器将在所有玩家离开后重启",
 
     "restart.task.reload.failed" : "没有可执行的重启任务",
-    "restart.task.reload.success": "服务器将在 {1} 重启"
+    "restart.task.reload.success": "服务器将在 {1} 重启",
+    "restart.task.message.default": "[自动重启] 服务器将在 §e{1}§r 秒后重启."
 }
